@@ -6,6 +6,10 @@ class VideoPlayerBasic {
       this._toggleBtn = null;
       this._progress = null;
       this._mouseDown = false;
+      this._skipNext = null;
+      this._skipPrev = null;
+      this._volume = null;
+      this._playbackRate = null;
     }
 
     init() {
@@ -36,12 +40,27 @@ class VideoPlayerBasic {
       this._video.currentTime = (e.offsetX / this._progressContainer.offsetWidth) * this._video.duration;
     }
 
+    _skip(flag) {
+      if (flag) this._video.currentTime += this._settings.skipNext;
+      else this._video.currentTime += this._settings.skipPrev;
+    }
+    _changeVolume() {
+      this._video.volume = this._volume.value;
+    }
+    _changePlaybackRate() {
+      this._video.playbackRate = this._playbackRate.value;
+    }
+
     _setElements() {
       this._videoContainer = document.querySelector(this._settings.videoPlayerContainer);
       this._video = this._videoContainer.querySelector('video');
       this._toggleBtn = this._videoContainer.querySelector('.toggle');
       this._progress = this._videoContainer.querySelector('.progress__filled');
       this._progressContainer = this._videoContainer.querySelector('.progress');
+      this._skipPrev = this._videoContainer.querySelector(`[data-skip="${this._settings.skipPrev}"]`);
+      this._skipNext = this._videoContainer.querySelector(`[data-skip="${this._settings.skipNext}"]`);
+      this._volume = this._videoContainer.querySelector("[name='volume']");
+      this._playbackRate = this._videoContainer.querySelector("[name='playbackRate']");      
     }
 
     _setEvents() {
@@ -52,6 +71,12 @@ class VideoPlayerBasic {
       this._progressContainer.addEventListener('mousemove', (e) => this._mouseDown && this._scrub(e));
       this._progressContainer.addEventListener('mousedown', (e) => this._mouseDown = true);
       this._progressContainer.addEventListener('mouseup', (e) => this._mouseDown = false);
+      this._progressContainer.addEventListener('mouseleave', (e) => this._mouseDown = false);
+      this._skipNext.addEventListener('click', () => this._skip(true));
+      this._skipPrev.addEventListener('click', () => this._skip(false));
+      this._video.addEventListener('dblclick', (e) => this._skip((this._video.offsetWidth / 2) < e.offsetX));
+      this._volume.addEventListener('input', () => this._changeVolume());
+      this._playbackRate.addEventListener('input', () => this._changePlaybackRate());
     }
 
     _addTemplate() {
@@ -69,10 +94,10 @@ class VideoPlayerBasic {
           <div class="progress__filled"></div>
           </div>
           <button class="player__button toggle" title="Toggle Play">►</button>
-          <input type="range" name="volume" class="player__slider" min=0 max="1" step="0.05" value="${this._settings.volume}">
-          <input type="range" name="playbackRate" class="player__slider" min="0.5" max="2" step="0.1" value="1">
-          <button data-skip="-1" class="player__button">« 1s</button>
-          <button data-skip="1" class="player__button">1s »</button>
+          <input type="range" name="volume" class="player__slider" min="${this._settings.volumeMin}" max="${this._settings.volumeMax}" step="${this._settings.volumeStep}" value="${this._settings.volume}">
+          <input type="range" name="playbackRate" class="player__slider" min="${this._settings.playbackRateMin}" max="${this._settings.playbackRateMax}" step="${this._settings.playbackRateStep}" value="${this._settings.playbackRate}">
+          <button data-skip="${this._settings.skipPrev}" class="player__button">« ${this._settings.skipPrev}s</button>
+          <button data-skip="${this._settings.skipNext}" class="player__button">${this._settings.skipNext}s »</button>
         </div>
       </div>
       `;
@@ -88,7 +113,16 @@ class VideoPlayerBasic {
         return {
           videoUrl: '',
           videoPlayerContainer: '.myplayer',
-          volume: 1
+          volume: 1,
+          volumeMax: 1,
+          volumeMin: 0,
+          volumeStep: 0.05,
+          skipNext: 1,
+          skipPrev: -1,
+          playbackRate: 1,
+          playbackRateMax: 2,
+          playbackRateMin: 0.5,
+          playbackRateStep: 0.1
         }
     }
 }
@@ -96,8 +130,8 @@ class VideoPlayerBasic {
 const myPlayer = new VideoPlayerBasic({
   videoUrl: 'video/mov_bbb.mp4',
   videoPlayerContainer: 'body',
-  skipNext: 10,
-  skipPrev: -10
+  skipNext: 3,
+  skipPrev: -2
 });
 
 myPlayer.init();
